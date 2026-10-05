@@ -10,7 +10,7 @@ export class Audio {
     this.ok = false;
     this.level = 0; // music intensity: 0 menu, 1 play, 2 danger
     this.musicOn = false;
-    this.step = 0;
+    this.seq = 0;
     this.nextTime = 0;
     this.timer = null;
     this.beds = {};
@@ -272,6 +272,12 @@ export class Audio {
   /** Levels 0..1 for the weather beds, eased. */
   weather(wind, rain, rumble, sea) {
     if (!this.ok) return;
+    const w = this.lastWeather || (this.lastWeather = [-1, -1, -1, -1]);
+    if (Math.abs(w[0] - wind) < 0.02 && Math.abs(w[1] - rain) < 0.02 && Math.abs(w[2] - rumble) < 0.02 && Math.abs(w[3] - sea) < 0.02) return;
+    w[0] = wind;
+    w[1] = rain;
+    w[2] = rumble;
+    w[3] = sea;
     try {
       const t = this.ctx.currentTime;
       this.beds.wind.g.gain.setTargetAtTime(Math.min(1, wind) * 0.42, t, 0.25);
@@ -287,8 +293,11 @@ export class Audio {
 
   /** 0 menus and lobby, 1 a disaster's warning, 2 the disaster itself, -1 silent (results use stingers). */
   setLevel(level) {
+    const changed = this.setFor !== level;
     this.level = level;
-    if (!this.ok) return;
+    if (!this.ok || (!changed && this.setOk)) return;
+    this.setFor = level;
+    this.setOk = true;
     try {
       const target = level < 0 ? 0 : level === 0 ? 0.22 : level === 1 ? 0.4 : 0.55;
       this.music.gain.setTargetAtTime(target, this.ctx.currentTime, 0.35);
@@ -300,7 +309,7 @@ export class Audio {
   startMusic() {
     if (!this.ok || this.timer) return;
     this.nextTime = this.ctx.currentTime + 0.1;
-    this.step = 0;
+    this.seq = 0;
     this.timer = setInterval(() => this.schedule(), 30);
     this.setLevel(this.level);
   }
@@ -311,9 +320,9 @@ export class Audio {
       const c = this.ctx;
       const spb = 60 / 128 / 4; // a sixteenth
       while (this.nextTime < c.currentTime + 0.14) {
-        this.play(this.step, this.nextTime);
+        this.play(this.seq, this.nextTime);
         this.nextTime += spb;
-        this.step++;
+        this.seq++;
       }
     } catch {
       // ignore

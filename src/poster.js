@@ -180,7 +180,7 @@ function badge(id, canvas) {
   }
 }
 
-export async function runPoster(name) {
+export async function runPoster(name, opts = {}) {
   const canvas = document.getElementById('stage');
   document.body.style.margin = '0';
   if (name.startsWith('badge-')) {
@@ -198,7 +198,7 @@ export async function runPoster(name) {
   if (!data) return;
   const rand = mulberry32(20261004);
   canvas.style.cssText = `position:fixed;left:0;top:0;width:${data.w}px;height:${data.h}px;display:block`;
-  const stage = new Stage(canvas, world, { poster: true, quality: 'high', width: data.w, height: data.h, pixelRatio: 1, rand, fov: data.camera.fov });
+  const stage = new Stage(canvas, world, { poster: true, quality: 'high', width: data.w, height: data.h, pixelRatio: 1, rand, fov: data.camera.fov, ...(opts.stage || {}) });
   stage.setSize(data.w, data.h, 1);
   stage.setQuality('high');
   const mix = skyMix(data.sky, 1, {});

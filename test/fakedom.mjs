@@ -85,11 +85,13 @@ export class FakeEl {
 
 export function installDom() {
   const body = new FakeEl('body');
+  const canvases = {};
   globalThis.document = {
     body,
-    fonts: { ready: Promise.resolve() },
+    getElementById: (id) => (canvases[id] ||= Object.assign(new FakeEl('canvas'), { getContext: () => fakeCtx() })),
+    fonts: { ready: Promise.resolve(), load: () => Promise.resolve() },
     hidden: false,
-    createElement: (t) => new FakeEl(t),
+    createElement: (t) => (t === 'canvas' ? Object.assign(new FakeEl('canvas'), { getContext: () => fakeCtx() }) : new FakeEl(t)),
     createElementNS: (ns, t) => new FakeEl(t),
     addEventListener() {},
   };
@@ -105,7 +107,7 @@ export function installDom() {
     remove() {}
   };
   globalThis.addEventListener = () => {};
-  globalThis.setTimeout = globalThis.setTimeout;
+  globalThis.requestAnimationFrame = () => 0;
   return body;
 }
 
@@ -116,6 +118,7 @@ export function fakeCtx() {
     get(t, k) {
       if (k in t) return t[k];
       if (k === 'measureText') return (s) => ({ width: String(s).length * 12 });
+      if (k === 'createRadialGradient' || k === 'createLinearGradient') return () => ({ addColorStop() {} });
       return (...a) => {
         calls.push([k, ...a]);
       };

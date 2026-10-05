@@ -8,6 +8,9 @@ import { Characters } from '../src/gfx/characters.js';
 import { Effects } from '../src/gfx/effects.js';
 import { CameraRig } from '../src/gfx/camera.js';
 import { mulberry32 } from '../src/sim/rng.js';
+import { installAudio } from './fakeaudio.mjs';
+
+installAudio();
 
 globalThis.addEventListener = () => {};
 globalThis.innerWidth = 1280;
@@ -15,6 +18,7 @@ globalThis.innerHeight = 720;
 globalThis.document = { fonts: { ready: Promise.resolve() }, createElement: () => ({}), addEventListener() {}, hidden: false };
 globalThis.requestAnimationFrame = () => 0;
 const { Game } = await import('../src/game/game.js');
+const { Audio } = await import('../src/game/audio.js');
 
 function fakeRoom(ids, rounds = 3) {
   const players = new Map(ids.map((id) => [id, { id, name: id.toUpperCase(), connected: true, presence: null }]));
@@ -123,7 +127,17 @@ function fakes(room) {
     hint: rec('hint'),
     darken: rec('darken'),
   };
-  const audio = new Proxy({ calls: [] }, { get: (t, k) => (k in t ? t[k] : (...a) => t.calls.push([k, ...a])) });
+  // the real Audio on a fake Web Audio, recording every call
+  const audio = new Audio();
+  audio.calls = [];
+  for (const n of Object.getOwnPropertyNames(Audio.prototype)) {
+    if (n === 'constructor' || typeof audio[n] !== 'function') continue;
+    const orig = audio[n].bind(audio);
+    audio[n] = (...a) => {
+      audio.calls.push([n, ...a]);
+      return orig(...a);
+    };
+  }
   const awarded = [];
   const controls = [];
   const saved = [];
