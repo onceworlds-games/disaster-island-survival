@@ -130,6 +130,31 @@ export class MeshBuilder {
     }
   }
 
+  /** A subdivided icosphere (detail 1 = 80 faces, 2 = 320) with radii (rx, ry, rz). */
+  sphere(cx, cy, cz, rx, ry, rz, hex, detail = 1) {
+    const t = (1 + Math.sqrt(5)) / 2;
+    const norm = (p) => {
+      const l = Math.hypot(p[0], p[1], p[2]);
+      return [p[0] / l, p[1] / l, p[2] / l];
+    };
+    const v = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(norm);
+    let faces = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]].map((f) => f.map((i) => v[i]));
+    for (let d = 0; d < detail; d++) {
+      const next = [];
+      for (const [a, b, c] of faces) {
+        const ab = norm([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]);
+        const bc = norm([(b[0] + c[0]) / 2, (b[1] + c[1]) / 2, (b[2] + c[2]) / 2]);
+        const ca = norm([(c[0] + a[0]) / 2, (c[1] + a[1]) / 2, (c[2] + a[2]) / 2]);
+        next.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]);
+      }
+      faces = next;
+    }
+    for (const [a, b, c] of faces) {
+      const k = 0.82 + 0.3 * ((a[1] + b[1] + c[1]) / 3 * 0.5 + 0.5);
+      this.tri(cx + a[0] * rx, cy + a[1] * ry, cz + a[2] * rz, cx + b[0] * rx, cy + b[1] * ry, cz + b[2] * rz, cx + c[0] * rx, cy + c[1] * ry, cz + c[2] * rz, shade(hex, k));
+    }
+  }
+
   /** A flat horizontal disc or ring at height y. */
   disc(cx, y, cz, rIn, rOut, seg, hex) {
     for (let i = 0; i < seg; i++) {

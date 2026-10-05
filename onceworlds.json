@@ -1,0 +1,23 @@
+{
+  "slug": "disaster-island-survival",
+  "name": "Disaster Island Survival",
+  "description": "Floods, meteors, tornadoes. Survive whatever hits the island next.",
+  "dir": "dist",
+  "productionBranch": "main",
+  "genre": "Survival",
+  "icon": "store/icon.png",
+  "thumbnails": ["store/thumb-1.png", "store/thumb-2.png", "store/thumb-3.png"],
+  "badges": [
+    { "id": "survivor", "name": "Survivor", "description": "Survive a disaster.", "icon": "store/badge-survivor.png" },
+    { "id": "untouchable", "name": "Untouchable", "description": "Survive every disaster in a match.", "icon": "store/badge-untouchable.png" },
+    { "id": "storm-chaser", "name": "Storm Chaser", "description": "Survive a tornado.", "icon": "store/badge-storm-chaser.png" },
+    { "id": "first-win", "name": "First Win", "description": "Win a match.", "icon": "store/badge-first-win.png" }
+  ],
+  "controls": [
+    { "keys": ["W", "A", "S", "D"], "action": "Move (or the arrow keys)" },
+    { "keys": ["Space"], "action": "Jump" },
+    { "keys": ["Shift"], "action": "Sprint" },
+    { "keys": ["Mouse"], "action": "Camera: drag" },
+    { "keys": ["Q", "E"], "action": "Watching: switch player" }
+  ]
+}
