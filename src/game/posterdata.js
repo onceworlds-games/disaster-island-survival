@@ -17,20 +17,44 @@ export const POSTERS = {
 
 const runner = (x, z, yaw, i, extra = {}) => ({ x, y: 0, z, yaw, speed: 9, phase: i * 1.7 + 0.6, sprint: true, color: PLAYER_COLORS[i % PLAYER_COLORS.length], ...extra });
 
-/** The meteor moment of the cover: several rocks in the air, rings on the ground and an impact a few hundredths of a second old. */
-function pickMeteorTime(round, fx, fz) {
+/** Projects a world point through a look-at camera: pixel x, y (y down) and depth (positive in front). Pure, for staging and tests. */
+export function projectPoint(cam, w, h, x, y, z) {
+  const [cx, cy, cz] = cam.pos, [tx, ty, tz] = cam.target;
+  let fx = tx - cx, fy = ty - cy, fz = tz - cz;
+  const fl = Math.hypot(fx, fy, fz);
+  fx /= fl;
+  fy /= fl;
+  fz /= fl;
+  // right = forward x up
+  let rx = -fz, ry = 0, rz = fx;
+  const rl = Math.hypot(rx, rz) || 1;
+  rx /= rl;
+  rz /= rl;
+  // up = right x forward
+  const ux = ry * fz - rz * fy, uy = rz * fx - rx * fz, uz = rx * fy - ry * fx;
+  const dx = x - cx, dy = y - cy, dz = z - cz;
+  const depth = dx * fx + dy * fy + dz * fz;
+  const t = Math.tan((cam.fov * Math.PI) / 360);
+  const nx = dx * rx + dy * ry + dz * rz;
+  const ny = dx * ux + dy * uy + dz * uz;
+  return { x: (0.5 + nx / (depth * t * (w / h)) / 2) * w, y: (0.5 - ny / (depth * t) / 2) * h, depth };
+}
+
+/** The meteor moment of the cover: several rocks in the air in frame, rings on the ground, an impact a few hundredths of a second old. */
+function pickMeteorTime(round, cam, w, h) {
   let best = 20000, bs = -1;
-  for (let t = 14000; t < 46000; t += 50) {
+  for (let t = 12000; t < 47000; t += 50) {
     let air = 0, boom = 0;
     for (const m of round.meteors) {
       const d = m.at - t;
       if (d > 0 && d < METEOR_TELEGRAPH) {
-        const dist = Math.hypot(m.x - fx, m.z - fz);
-        if (dist < 34) air++;
+        const k = d / METEOR_TELEGRAPH;
+        const rock = projectPoint(cam, w, h, m.x - 28 * k, m.y + 66 * k, m.z - 15 * k);
+        if (rock.depth > 0 && rock.x > 60 && rock.x < w - 60 && rock.y > 30 && rock.y < h * 0.8) air++;
       }
       if (d <= 0 && d > -260) {
-        const dist = Math.hypot(m.x - fx, m.z - fz);
-        if (dist < 26 && dist > 6) boom += 3 - Math.abs(d + 130) / 130;
+        const b = projectPoint(cam, w, h, m.x, m.y, m.z);
+        if (b.depth > 0 && b.x > 200 && b.x < w - 200 && b.y > h * 0.45 && b.y < h * 0.92) boom += 3 - Math.abs(d + 130) / 130;
       }
     }
     const s = air + boom * 2;
@@ -67,15 +91,16 @@ export function stagePoster(name, world) {
   if (name === 'cover') {
     const kinds = ['meteor'];
     const round = prepareRound(kinds, 4242, world);
-    const t = pickMeteorTime(round, -4, 2);
+    const camera = { pos: [9, 4.6, 21], target: [-3, 11.5, -6], fov: 64 };
+    const t = pickMeteorTime(round, camera, size.w, size.h);
     return {
       ...base, kinds, seed: 4242, t, sky: kinds, title: true,
-      camera: { pos: [17, 7.5, 30], target: [-3, 8.5, -7], fov: 60 },
+      camera,
       chars: [
-        runner(4, 6, 0.4, 0), runner(-5, 4, 3.5, 1), runner(1, -3, 2.6, 2), runner(7, 1, -0.6, 3), runner(-9, 9, 0.2, 4), runner(-2, 11, 5.6, 5),
-        runner(10, 7, 0.9, 6), runner(-12, 1, 2.2, 7),
+        runner(2.5, 6.5, 0.4, 0), runner(-5, 4.5, 3.5, 1), runner(0.5, -2.5, 2.6, 2), runner(6, 2, -0.6, 3), runner(-8, 9, 0.2, 4), runner(-1.5, 8.5, 5.6, 5),
+        runner(7.5, 5.5, 0.9, 6), runner(-11, 0.5, 2.2, 7),
         { x: -20, y: 8.6, z: -7, yaw: 0.6, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[8] },
-        { x: -8, y: 5.55, z: 18.2, yaw: 2.9, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[9] },
+        { x: 0.9, y: 18, z: -14.4, yaw: 0.3, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[9] },
       ],
     };
   }
@@ -86,12 +111,12 @@ export function stagePoster(name, world) {
     const tp = tornadoAt(round, t);
     return {
       ...base, kinds, seed: 7781, t, sky: kinds,
-      camera: { pos: [tp.x - 9, 4.6, tp.z + 29], target: [tp.x, 12, tp.z], fov: 64 },
+      camera: { pos: [tp.x - 6, 3.4, tp.z + 24], target: [tp.x, 11, tp.z], fov: 66 },
       chars: [
-        { x: tp.x + 5.5, y: 0, z: tp.z + 3.5, yaw: 1.2, speed: 0, phase: 0, out: 0.55, cause: 'flung', color: PLAYER_COLORS[3], key: 'a' },
-        { x: tp.x + 12, y: 0, z: tp.z + 10, yaw: 0.2, speed: 10, phase: 1.1, sprint: true, color: PLAYER_COLORS[0] },
-        runner(tp.x - 5, tp.z + 18, 0.3, 4),
-        runner(tp.x - 11, tp.z + 21, -0.2, 5),
+        { x: tp.x + 3.2, y: 0, z: tp.z + 10.5, yaw: 1.2, speed: 0, phase: 0, out: 0.7, cause: 'flung', color: PLAYER_COLORS[3], key: 'a' },
+        { x: tp.x + 9.5, y: 0, z: tp.z + 13, yaw: 0.2, speed: 10, phase: 1.1, sprint: true, color: PLAYER_COLORS[0] },
+        runner(tp.x - 4.5, tp.z + 11, 0.3, 4),
+        runner(tp.x - 8.5, tp.z + 8.5, -0.2, 5),
       ],
     };
   }
@@ -117,7 +142,7 @@ export function stagePoster(name, world) {
     const tp = tornadoAt(round, t);
     return {
       ...base, kinds, seed: 7781, t, sky: kinds,
-      camera: { pos: [tp.x * 0.5 + 6, 14, 64], target: [tp.x * 0.6, 12.5, tp.z * 0.6], fov: 46 },
+      camera: { pos: [tp.x + 4, 17, 96], target: [tp.x, 15.5, tp.z], fov: 42 },
       chars: [],
     };
   }

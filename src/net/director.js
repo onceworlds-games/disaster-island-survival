@@ -150,7 +150,8 @@ export class Director {
         if (r.b || g.outs[r.id]) return;
         const p = room.players.get(r.id);
         if (!p) {
-          if (!this.leftSeen.has(r.id)) {
+          // gone from the room: out as the disaster begins (nothing counts during the warning)
+          if (t >= 0 && !this.leftSeen.has(r.id)) {
             this.leftSeen.add(r.id);
             away.push({ id: r.id, cause: 'left', t });
           }
