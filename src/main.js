@@ -54,7 +54,6 @@ async function boot() {
     stats = null;
   }
   const game = new Game({ ow, room, stage, hud, audio, input, world, stats: stats && typeof stats === 'object' ? stats : { matches: 0, wins: 0, survived: 0, rounds: 0 } });
-  window.__game = game; // handy when debugging in a console
   game.start();
 }
 

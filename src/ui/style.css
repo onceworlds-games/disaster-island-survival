@@ -14,7 +14,7 @@ html, body {
   margin: 0; height: 100%; overflow: hidden; background: #0b1420; color: var(--ink);
   font-family: var(--font); letter-spacing: 0.04em; user-select: none; -webkit-user-select: none; touch-action: none;
 }
-canvas#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+canvas#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
 #hud, #screens { position: fixed; inset: 0; pointer-events: none; }
 #screens { z-index: 6; }
 #hud { z-index: 4; }

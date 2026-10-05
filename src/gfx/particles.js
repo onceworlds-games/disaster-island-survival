@@ -18,7 +18,7 @@ varying vec4 vColor;
 void main() {
   vec2 c = gl_PointCoord - 0.5;
   float d = length(c) * 2.0;
-  float a = smoothstep(1.0, 0.3, d) * vColor.a;
+  float a = (1.0 - smoothstep(0.3, 1.0, d)) * vColor.a;
   if (a < 0.01) discard;
   gl_FragColor = vec4(vColor.rgb, a);
   #include <tonemapping_fragment>
