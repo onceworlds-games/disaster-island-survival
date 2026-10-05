@@ -220,3 +220,68 @@ test('a house roof is climbed by the outside stairs, crossed over the ridge and 
   while (b.z > h.z0 - 0.3 && guard++ < 60 * 20) stepBody(world, b, { mx: 0, mz: -1 }, DT);
   assert.ok(b.y < 3.6 && b.y > 2.4, `the north eave y ${b.y} z ${b.z}`);
 });
+
+test('two hundred random walkers on the real island: never inside anything, never under the ground, never off the island', () => {
+  let seed = 99;
+  const rnd = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  let climbed = 0, roofs = 0;
+  for (let w = 0; w < 200; w++) {
+    const s = map.spawns[w % 16];
+    const b = standing(s.x + (rnd() - 0.5) * 3, s.z + (rnd() - 0.5) * 3);
+    let dirx = 0, dirz = 0, jump = false, sprint = false;
+    for (let i = 0; i < 60 * 20; i++) {
+      if (i % 30 === 0) {
+        const a = rnd() * Math.PI * 2;
+        const m = rnd() < 0.15 ? 0 : 1;
+        dirx = Math.cos(a) * m;
+        dirz = Math.sin(a) * m;
+        jump = rnd() < 0.3;
+        sprint = rnd() < 0.5;
+      }
+      stepBody(world, b, { mx: dirx, mz: dirz, jump: jump && i % 40 < 20, sprint }, DT, { water: -0.6 });
+      if (i % 7 === 0) {
+        assert.ok(Number.isFinite(b.x) && Number.isFinite(b.y) && Number.isFinite(b.z), 'finite');
+        assert.ok(map.inBounds(b.x, b.z), `off the island at ${b.x.toFixed(1)},${b.z.toFixed(1)}`);
+        assert.ok(b.y > -0.001, `under the ground: ${b.y}`);
+        assert.ok(b.y < 24, `in the sky: ${b.y}`);
+        if (!b.climbing) assert.ok(!world.blocked(b.x, b.z, b.y), `inside something at ${b.x.toFixed(2)},${b.y.toFixed(2)},${b.z.toFixed(2)} (walker ${w}, step ${i})`);
+      }
+      if (b.climbing) climbed++;
+      if (b.y > 2.5 && b.onGround) roofs++;
+    }
+  }
+  assert.ok(roofs > 0, 'some of them ended up on roofs or terraces by chance');
+  void climbed;
+});
+
+test('walkers in rising and falling water behave too: swimming strokes, wading, climbing out', () => {
+  let seed = 4242;
+  const rnd = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  for (let w = 0; w < 120; w++) {
+    const s = map.spawns[w % 16];
+    const b = standing(s.x, s.z);
+    let dirx = 0, dirz = 0;
+    const level = rnd() * 14 - 0.6;
+    for (let i = 0; i < 60 * 15; i++) {
+      if (i % 40 === 0) {
+        const a = rnd() * Math.PI * 2;
+        dirx = Math.cos(a);
+        dirz = Math.sin(a);
+      }
+      const water = level + Math.sin(i / 50) * 0.4;
+      stepBody(world, b, { mx: dirx, mz: dirz, jump: i % 20 < 10, sprint: rnd() < 0.5 }, DT, { water });
+      if (i % 9 === 0) {
+        assert.ok(Number.isFinite(b.x) && Number.isFinite(b.y) && Number.isFinite(b.z));
+        assert.ok(map.inBounds(b.x, b.z), 'off the island');
+        assert.ok(b.y > -0.001 && b.y < 45, `height ${b.y}`);
+        if (!b.climbing) assert.ok(!world.blocked(b.x, b.z, b.y), `inside something at ${b.x.toFixed(2)},${b.y.toFixed(2)},${b.z.toFixed(2)}`);
+      }
+    }
+  }
+});

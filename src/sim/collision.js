@@ -209,10 +209,17 @@ export class World {
     return false;
   }
 
-  /** The nearest spot where a body stands free, searching outward from (x, z) at about height y. */
+  /** The nearest spot where a body stands free, searching outward from (x, z) at about height y: fine steps first, so a push is small. */
   freeSpot(x, z, y = 0) {
     if (!this.blocked(x, z, y)) return { x, z };
-    for (let r = 0.5; r <= 4; r += 0.5) {
+    for (let r = 0.06; r <= 0.66; r += 0.06) {
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2;
+        const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
+        if (!this.blocked(px, pz, y)) return { x: px, z: pz };
+      }
+    }
+    for (let r = 0.75; r <= 4; r += 0.5) {
       for (let k = 0; k < 12; k++) {
         const a = (k / 12) * Math.PI * 2;
         const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
@@ -341,6 +348,8 @@ function micro(world, b, dt) {
     if (b.y < g) b.y = g; // stepped onto a low ledge while still rising
     b.onGround = false;
   }
+  // dropping past a low step, or walking down a ledge, can leave the body brushing the side of the next one up: nudge it clear
+  if (world.blocked(b.x, b.z, b.y)) world.unstick(b);
 }
 
 /**
