@@ -50,6 +50,8 @@ function stripeTexture() {
   const tex = new THREE.DataTexture(data, W, H, THREE.RGBAFormat);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearFilter;
   tex.needsUpdate = true;
   return tex;
 }
@@ -160,6 +162,18 @@ export class Effects {
     ];
     this.tdebris = inst(new THREE.BoxGeometry(0.5, 0.35, 0.4), new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 0.9 }), 56, 0);
     for (let i = 0; i < 56; i++) this.tdebris.setColorAt(i, _c.set([0x5a4630, 0x6d6a60, 0x3d3a34, 0x8a7350][i % 4]));
+    // flood: beams of light over the three places that stay dry, so the goal is on screen
+    this.beacons = this.world.map.highPoints.map((hp) => {
+      const geo = new THREE.CylinderGeometry(0.8, 1.3, 20, 18, 1, true).translate(0, 10, 0);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x7be8ff, transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(hp.x, hp.y + 0.1, hp.z);
+      m.visible = false;
+      m.renderOrder = 9;
+      m.frustumCulled = false;
+      this.group.add(m);
+      return m;
+    });
     // rain
     const N = 1100;
     const off = new Float32Array(N * 2 * 3), end = new Float32Array(N * 2);
@@ -215,6 +229,7 @@ export class Effects {
     this.tornadoOn = false;
     this.quake = 0;
     this.rain.visible = false;
+    for (const b of this.beacons) b.visible = false;
     for (const m of [this.rings, this.discs, this.shocks, this.craters, this.craterRims, this.rocks, this.chunks, this.chunkShadows, this.lava, this.tdebris]) m.count = 0;
   }
 
@@ -534,6 +549,14 @@ export class Effects {
       const ramp = Math.max(0, Math.min(1, (t + 4000) / 4000));
       u.uAlpha.value *= ramp;
     }
+
+    // the beams stay up while the water is still climbing
+    const beamsOn = live && round.has.flood && t < 36000;
+    const fade = beamsOn ? Math.min(1, (t + 5500) / 2500) * (t > 30000 ? Math.max(0, 1 - (t - 30000) / 6000) : 1) : 0;
+    this.beacons.forEach((m, i) => {
+      m.visible = beamsOn && fade > 0.01;
+      if (m.visible) m.material.opacity = (0.14 + 0.1 * (0.5 + 0.5 * Math.sin(this.time * 3 + i * 1.7))) * fade;
+    });
 
     // flags for the HUD / audio
     for (const m of [this.rings, this.discs, this.shocks, this.craters, this.craterRims, this.rocks, this.chunks, this.chunkShadows, this.lava, this.tdebris]) {

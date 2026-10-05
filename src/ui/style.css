@@ -80,6 +80,14 @@ canvas#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: bl
 }
 .watch kbd, kbd { font-family: var(--font); font-size: 18px; border: 1px solid rgba(255, 255, 255, 0.6); padding: 0 6px; line-height: 20px; color: var(--dim); }
 
+.watcher .top { top: calc(max(10px, env(safe-area-inset-top)) + 42px); }
+.watcher .watch { top: calc(max(10px, env(safe-area-inset-top)) + 112px); }
+
+.hint {
+  position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); background: var(--panel); border-bottom: 3px solid var(--acc);
+  padding: 4px 22px 1px; font-size: 40px; letter-spacing: 0.12em; animation: pop 0.25s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+
 /* ---- lobby */
 .lobby { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; }
 .lobby .set { display: inline-flex; align-items: stretch; background: var(--panel); border-bottom: 3px solid var(--acc); pointer-events: auto; }

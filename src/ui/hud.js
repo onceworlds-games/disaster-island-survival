@@ -121,6 +121,10 @@ export class Hud {
     this.watch.append(el('span', '', 'WATCHING'), this.watchName, el('kbd', '', 'Q'), el('kbd', '', 'E'));
     hud.appendChild(this.watch);
 
+    // a one-word hint at the moment a control is first needed
+    this.hintEl = el('div', 'hint hidden');
+    hud.appendChild(this.hintEl);
+
     // lobby settings
     this.lobby = el('div', 'lobby hidden');
     this.setBox = el('div', 'set');
@@ -257,6 +261,14 @@ export class Hud {
   hideStat() {
     this.tr.classList.add('hidden');
     this.stamina.classList.add('hide');
+  }
+
+  /** A one-word hint near the bottom of the screen, or null to clear it. */
+  hint(text) {
+    if (this.cache.hint === text) return;
+    this.cache.hint = text;
+    this.hintEl.classList.toggle('hidden', !text);
+    if (text) this.hintEl.textContent = text;
   }
 
   watching(show, name) {
@@ -396,7 +408,14 @@ export class Hud {
       this.fxHurt.style.opacity = v;
     }
   }
+  /** The platform draws a "Watching" note at the top centre for a player who came late: the bar steps down. */
+  setWatcher(on) {
+    if (this.cache.watcher === on) return;
+    this.cache.watcher = on;
+    document.body.classList.toggle('watcher', !!on);
+  }
   flash() {
+    if (document.body.classList.contains('reduced')) return;
     this.fxFlash.classList.remove('on');
     void this.fxFlash.offsetWidth;
     this.fxFlash.classList.add('on');

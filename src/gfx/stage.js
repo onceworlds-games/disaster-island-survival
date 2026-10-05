@@ -49,12 +49,14 @@ export class Stage {
     this.poster = !!opts.poster;
     this.quality = opts.quality || 'medium';
     const q = this.quality;
-    this.renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: q !== 'low',
-      powerPreference: 'high-performance',
-      preserveDrawingBuffer: this.poster,
-    });
+    this.renderer = opts.renderer
+      ? opts.renderer(canvas)
+      : new THREE.WebGLRenderer({
+        canvas,
+        antialias: q !== 'low',
+        powerPreference: 'high-performance',
+        preserveDrawingBuffer: this.poster,
+      });
     const r = this.renderer;
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
@@ -88,6 +90,7 @@ export class Stage {
     sc.bottom = -36;
     sc.near = 1;
     sc.far = 170;
+    sc.updateProjectionMatrix();
     this.sun.shadow.bias = -0.0005;
     this.sun.shadow.normalBias = 0.06;
     this.sun.shadow.radius = 2.5;

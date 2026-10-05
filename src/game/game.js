@@ -329,6 +329,8 @@ export class Game {
     this.time += dt;
     const room = this.room;
     this.refresh();
+    // the host's duties don't wait for a tap on Play (the host role can land on a page still showing the title)
+    this.director.tick(dt);
     if (this.mode === 'title') {
       this.stepTitle(dt);
       return;
@@ -336,14 +338,13 @@ export class Game {
     this.prev.x = this.body.x;
     this.prev.y = this.body.y;
     this.prev.z = this.body.z;
-    this.director.tick(dt);
     const phase = this.phase;
     const matchLive = phase === 'warn' || phase === 'run';
     const paused = (matchLive || phase === 'result') && !room.running;
     if (paused) return;
     const b = this.body;
     const inLobby = phase === 'lobby' || phase === 'starting';
-    const canMove = !this.out && (inLobby || (matchLive && this.slot >= 0)) && !this.closed;
+    const canMove = !this.out && (inLobby || ((matchLive || phase === 'result') && this.slot >= 0)) && !this.closed;
     let mx = 0, mz = 0, jump = false, sprint = false;
     if (canMove) {
       this.input.move(this.tmp);
@@ -371,10 +372,24 @@ export class Game {
       }
       this.feedback(dt);
     }
+    // the first few times a ladder is near, one word says what it is for
+    let hint = null;
+    if (!this.out && canMove && !b.climbing) {
+      for (const L of this.world.ladders) {
+        const dx = b.x - L.x, dz = b.z - L.z;
+        const dn = dx * L.nx + dz * L.nz, dl = Math.abs(-dx * L.nz + dz * L.nx);
+        if (dn > 0.2 && dn < 2.2 && dl < L.hw + 1 && b.y >= L.y0 - 0.3 && b.y < L.y1 - 0.6) hint = 'CLIMB';
+      }
+    }
+    if (hint && !this.hintOn) {
+      this.hintCount = (this.hintCount || 0) + 1;
+      this.hintOn = true;
+    } else if (!hint) this.hintOn = false;
+    this.hud.hint(hint && this.hintCount <= 3 ? '\u25B2  CLIMB' : null);
     // a report that wasn't heard is sent again
     if (this.out && this.g && this.g.rid === this.rid && !this.g.outs[this.me.id] && this.slot >= 0) {
       this.sendAcc += dt;
-      if (this.sendAcc > 1 && this.sendTries < 6) {
+      if (this.sendAcc > 1 && this.sendTries < 5) {
         this.sendAcc = 0;
         this.sendTries++;
         this.reportOut();
@@ -846,6 +861,7 @@ export class Game {
     const inLobby = phase === 'lobby' || phase === 'starting';
     hud.setLobby(inLobby && this.mode === 'play', { value: Number(room.settings.rounds) || 5, host: room.isHost && phase === 'lobby', options: [3, 5, 8] });
     const spectating = room.spectating || (this.slot < 0 && !!g && !inLobby);
+    hud.setWatcher(room.spectating);
     if (!g || inLobby || phase === 'wait') {
       hud.setTop(false, {});
       hud.hideStat();
@@ -1019,7 +1035,7 @@ export class Game {
   applyControls() {
     const phase = this.phase;
     const inLobby = phase === 'lobby' || phase === 'starting';
-    const want = this.mode === 'play' && !this.out && !this.closed && (inLobby || ((phase === 'warn' || phase === 'run') && this.slot >= 0));
+    const want = this.mode === 'play' && !this.out && !this.closed && (inLobby || ((phase === 'warn' || phase === 'run' || phase === 'result') && this.slot >= 0));
     if (this.controlsOn === want) return;
     this.controlsOn = want;
     try {

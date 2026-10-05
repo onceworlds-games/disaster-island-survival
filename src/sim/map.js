@@ -38,6 +38,8 @@ export const COLORS = {
   glass: 0x24384f,
   steel: 0x7e8d9c,
   steelDark: 0x4d5a68,
+  rail: 0xffb02a,
+  rung: 0xf1e7cf,
 };
 
 /** Builds the whole map. Deterministic: no randomness outside the seeded generators below. */
@@ -256,9 +258,9 @@ export function buildMap() {
     // the ladder: rails and rungs on the south face
     const faceZ = cz + hw;
     ladders.push({ id: 'clock', x: cx, z: faceZ, nx: 0, nz: 1, y0: 0, y1: 18, hw: 0.55 });
-    dbox(cx - 0.55, 0, faceZ, cx - 0.47, 18, faceZ + 0.1, COLORS.steelDark);
-    dbox(cx + 0.47, 0, faceZ, cx + 0.55, 18, faceZ + 0.1, COLORS.steelDark);
-    for (let y = 0.5; y < 18; y += 0.5) dbox(cx - 0.5, y, faceZ, cx + 0.5, y + 0.07, faceZ + 0.09, COLORS.steel);
+    dbox(cx - 0.55, 0, faceZ, cx - 0.47, 18, faceZ + 0.1, COLORS.rail);
+    dbox(cx + 0.47, 0, faceZ, cx + 0.55, 18, faceZ + 0.1, COLORS.rail);
+    for (let y = 0.5; y < 18; y += 0.5) dbox(cx - 0.5, y, faceZ, cx + 0.5, y + 0.07, faceZ + 0.09, COLORS.rung);
     buildings.push({ id: 'clock', kind: 'tower', x0: cx - hw, x1: cx + hw, z0: cz - hw, z1: cz + hw, top: 18, debris: true });
     excl(cx - 4, cz - 4, cx + 4, cz + 5);
   }
@@ -287,9 +289,9 @@ export function buildMap() {
     const sz0 = dz1, sz1 = dz1 + 0.3;
     box(cx - 0.6, 0, sz0, cx + 0.6, 16.6, sz1, 0x5b6773, 0x8d9aa7, 'spine');
     ladders.push({ id: 'water', x: cx, z: sz1, nx: 0, nz: 1, y0: 0, y1: 16.6, hw: 0.55 });
-    dbox(cx - 0.55, 0, sz1, cx - 0.47, 16.6, sz1 + 0.1, COLORS.steelDark);
-    dbox(cx + 0.47, 0, sz1, cx + 0.55, 16.6, sz1 + 0.1, COLORS.steelDark);
-    for (let y = 0.5; y < 16.6; y += 0.5) dbox(cx - 0.5, y, sz1, cx + 0.5, y + 0.07, sz1 + 0.09, COLORS.steel);
+    dbox(cx - 0.55, 0, sz1, cx - 0.47, 16.6, sz1 + 0.1, COLORS.rail);
+    dbox(cx + 0.47, 0, sz1, cx + 0.55, 16.6, sz1 + 0.1, COLORS.rail);
+    for (let y = 0.5; y < 16.6; y += 0.5) dbox(cx - 0.5, y, sz1, cx + 0.5, y + 0.07, sz1 + 0.09, COLORS.rung);
     buildings.push({ id: 'water', kind: 'tower', x0: dx0, x1: dx1, z0: dz0, z1: dz1, top: 20.6, debris: true });
     excl(dx0 - 2, dz0 - 2, dx1 + 2, dz1 + 3);
   }
@@ -416,7 +418,7 @@ export function buildMap() {
   const highPoints = [
     { id: 'hill', x: 21, z: 12, y: 15.4 },
     { id: 'clock', x: 0, z: -15, y: 18 },
-    { id: 'water', x: 24, z: -18, y: 16.6 },
+    { id: 'water', x: 24, z: -15.2, y: 16.6 },
   ];
 
   return { solids, deco, ladders, buildings, trees, spawns, highPoints, hill, inBounds, exclusions };
