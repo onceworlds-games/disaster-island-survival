@@ -137,7 +137,7 @@ test('the bots path from the plaza reaches the lookout on the hill', async () =>
 });
 
 test('ladders climb to the top of the clock tower and the water tower, and back down', async () => {
-  for (const [id, y, name] of [[0, 18, 'clock'], [1, 16.6, 'water']]) {
+  for (const [id, y, name] of [[0, 20, 'clock'], [1, 16.6, 'water']]) {
     const L = world.ladders[id];
     const b = standing(L.x + L.nx * 0.7, L.z + L.nz * 0.7);
     let guard = 0;
@@ -157,7 +157,7 @@ test('ladders climb to the top of the clock tower and the water tower, and back 
 });
 
 test('walking off a roof edge falls and lands with an impact', () => {
-  const b = standing(0, -15, 18);
+  const b = standing(0, -15, 20);
   b.onGround = true;
   let landed = 0;
   for (let i = 0; i < 240 && !(landed > 0); i++) {

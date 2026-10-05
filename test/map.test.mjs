@@ -70,7 +70,7 @@ test('every building can be entered and every roof reached from the plaza', () =
   assert.ok(reach(36, -3.5, 0, 0.5), 'kiosk');
   assert.ok(reach(21, 12, 15.4, 0.5), 'hill lookout');
   assert.ok(reach(21, 12, 10, 0.5) || reach(16, 12, 10, 0.5), 'hill second terrace');
-  assert.ok(reach(0, -15, 18, 1), 'clock tower top');
+  assert.ok(reach(0, -15, 20, 1), 'clock tower top');
   assert.ok(reach(21.5, -18, 16.6, 1), 'water tower catwalk');
   assert.ok(reach(-6, 42, 0, 0.5), 'pier end');
 });

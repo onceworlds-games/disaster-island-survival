@@ -100,7 +100,7 @@ export function stagePoster(name, world) {
         runner(2.5, 6.5, 0.4, 0), runner(-5, 4.5, 3.5, 1), runner(0.5, -2.5, 2.6, 2), runner(6, 2, -0.6, 3), runner(-8, 9, 0.2, 4), runner(-1.5, 8.5, 5.6, 5),
         runner(7.5, 5.5, 0.9, 6), runner(-11, 0.5, 2.2, 7),
         { x: -20, y: 8.6, z: -7, yaw: 0.6, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[8] },
-        { x: 0.9, y: 18, z: -14.4, yaw: 0.3, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[9] },
+        { x: 0.9, y: 20, z: -14.4, yaw: 0.3, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[9] },
       ],
     };
   }
@@ -125,13 +125,13 @@ export function stagePoster(name, world) {
     const cx = 0, cz = -15;
     return {
       ...base, kinds, seed: 99, t: 40000, sky: ['sunset'], water: FLOOD_MAX, sunDir: [-0.62, 0.17, -0.77],
-      camera: { pos: [7.2, 20.1, -7.2], target: [0, 19.2, -15], fov: 62 },
+      camera: { pos: [7.2, 22.1, -7.2], target: [0, 21.2, -15], fov: 62 },
       chars: [
-        { x: cx - 1.3, y: 18, z: cz - 0.3, yaw: 0.5, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[0] },
-        { x: cx + 0.2, y: 18, z: cz + 0.2, yaw: 0.2, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[4] },
-        { x: cx + 1.5, y: 18, z: cz - 0.7, yaw: -0.4, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[2] },
-        { x: cx - 0.5, y: 18, z: cz - 1.8, yaw: 0.9, speed: 0, phase: 0, color: PLAYER_COLORS[6] },
-        { x: cx + 1.0, y: 18, z: cz - 1.9, yaw: -0.8, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[3] },
+        { x: cx - 1.3, y: 20, z: cz - 0.3, yaw: 0.5, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[0] },
+        { x: cx + 0.2, y: 20, z: cz + 0.2, yaw: 0.2, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[4] },
+        { x: cx + 1.5, y: 20, z: cz - 0.7, yaw: -0.4, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[2] },
+        { x: cx - 0.5, y: 20, z: cz - 1.8, yaw: 0.9, speed: 0, phase: 0, color: PLAYER_COLORS[6] },
+        { x: cx + 1.0, y: 20, z: cz - 1.9, yaw: -0.8, speed: 0, phase: 0, air: true, color: PLAYER_COLORS[3] },
       ],
     };
   }

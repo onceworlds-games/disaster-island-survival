@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { Particles } from './particles.js';
 import {
-  METEOR_TELEGRAPH, BALL_TELEGRAPH, BALL_FLIGHT, DEBRIS_FALL,
+  METEOR_TELEGRAPH, BALL_TELEGRAPH, BALL_FLIGHT, DEBRIS_FALL, RUN_MS, TORNADO,
   tornadoAt, ballAt, debrisY, flowLength,
 } from '../sim/disasters.js';
 
@@ -156,9 +156,9 @@ export class Effects {
       return m;
     };
     this.funnels = [
-      funnel(6.2, 1.5, 34, 0.62, this.tex[0], 7),
-      funnel(4.6, 0.9, 31, 0.5, this.tex[1], 8),
-      funnel(8.0, 2.6, 28, 0.32, this.tex[2], 6),
+      funnel(6.4, 2.3, 34, 0.62, this.tex[0], 7),
+      funnel(4.8, 1.6, 31, 0.5, this.tex[1], 8),
+      funnel(8.2, 3.8, 28, 0.32, this.tex[2], 6),
     ];
     this.tdebris = inst(new THREE.BoxGeometry(0.5, 0.35, 0.4), new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 0.9 }), 56, 0);
     for (let i = 0; i < 56; i++) this.tdebris.setColorAt(i, _c.set([0x5a4630, 0x6d6a60, 0x3d3a34, 0x8a7350][i % 4]));
@@ -316,6 +316,8 @@ export class Effects {
     const allowEvents = live && prev > -1e8 && gap >= 0 && gap < 900;
 
     let nRings = 0, nDiscs = 0, nRocks = 0, nCraters = 0, nChunks = 0, nShadows = 0, nLava = 0;
+    // a disaster that runs its full time eases away as the result shows
+    const away = live ? Math.max(0, Math.min(1, 1 - (t - RUN_MS) / 2000)) : 0;
 
     if (live && round.has.meteor) {
       for (const m of round.meteors) {
@@ -372,7 +374,7 @@ export class Effects {
         if (allowEvents && b.at - BALL_FLIGHT > prev && b.at - BALL_FLIGHT <= t) this.eruptBurst();
       }
       // the mountain smokes while the volcano runs
-      const rate = this.qf * 36 * dt;
+      const rate = this.qf * 36 * dt * away;
       let n = Math.floor(rate) + (this.rand() < rate - Math.floor(rate) ? 1 : 0);
       for (let i = 0; i < n; i++) {
         const r = this.rand;
@@ -406,7 +408,7 @@ export class Effects {
     }
 
     if (live && round.has.quake) {
-      this.quake = Math.min(1, Math.max(0, (t + 500) / 1200));
+      this.quake = Math.min(1, Math.max(0, (t + 500) / 1200)) * away;
       round.cracks.forEach((c, ci) => {
         if (t < c.crackAt) return;
         const open = smooth((t - c.openAt) / 700);
@@ -493,11 +495,16 @@ export class Effects {
     // tornado
     if (live && round.has.tornado) {
       const tp = tornadoAt(round, t, this.tornadoPos);
-      const grow = Math.max(0.05, Math.min(1, (t + 6000) / 6000));
-      this.tornadoOn = true;
+      const grow = Math.max(0.05, Math.min(1, (t + 6000) / 6000)) * Math.max(0.02, away);
+      this.tornadoOn = away > 0.01;
+      // the ground it will take: a ring where it flings
+      if (t > -4000 && away > 0.3) {
+        const gy = this.world.topAtPoint(tp.x, tp.z);
+        this.putRing(nRings++, nDiscs++, tp.x, gy + 0.09, tp.z, TORNADO.kill * Math.min(1, grow + 0.2), 1, 1.0, 0.72, 0.28);
+      }
       const spins = [2.4, -3.0, 1.7];
       this.funnels.forEach((f, i) => {
-        f.visible = true;
+        f.visible = away > 0.01;
         f.position.set(tp.x, 0, tp.z);
         f.scale.set(grow, grow, grow);
         f.rotation.y += spins[i] * dt;
@@ -528,8 +535,8 @@ export class Effects {
     }
 
     // rain: strong green acid, thin grey drizzle in a flood or a tornado
-    const acid = live && round.has.acid;
-    const drizzle = live && (round.has.flood || round.has.tornado);
+    const acid = live && round.has.acid && away > 0.01;
+    const drizzle = live && (round.has.flood || round.has.tornado) && away > 0.01;
     this.rain.visible = !!(acid || drizzle);
     if (this.rain.visible) {
       const u = this.rainMat.uniforms;
@@ -547,11 +554,11 @@ export class Effects {
         u.uLen.value = 1.2;
       }
       const ramp = Math.max(0, Math.min(1, (t + 4000) / 4000));
-      u.uAlpha.value *= ramp;
+      u.uAlpha.value *= ramp * away;
     }
 
     // the beams stay up while the water is still climbing
-    const beamsOn = live && round.has.flood && t < 36000;
+    const beamsOn = live && round.has.flood && t < 36000 && away > 0;
     const fade = beamsOn ? Math.min(1, (t + 5500) / 2500) * (t > 30000 ? Math.max(0, 1 - (t - 30000) / 6000) : 1) : 0;
     this.beacons.forEach((m, i) => {
       m.visible = beamsOn && fade > 0.01;

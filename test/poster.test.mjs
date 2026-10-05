@@ -51,7 +51,7 @@ test('cover: meteors in the air, an impact just now, players running and standin
   });
   assert.ok(inFrame.length >= 8, `${inFrame.length} of ${d.chars.length} characters in frame`);
   assert.ok(d.chars.some((c) => c.y > 8), 'one on a roof');
-  const clock = p(0, 18, -15);
+  const clock = p(0, 20, -15);
   assert.ok(clock.x > 300 && clock.x < 980 && clock.y > 150 && clock.y < 500, 'the clock tower in the middle');
   assert.ok(d.title && d.h === 720);
 });
@@ -79,7 +79,7 @@ test('win: survivors on the clock tower, the flood far below, in the middle of t
   assert.deepEqual(d.sky, ['sunset']);
   assert.ok(d.sunDir && d.sunDir[1] > 0);
   const p = view(d);
-  assert.ok(d.chars.length >= 4 && d.chars.every((c) => c.y === 18));
+  assert.ok(d.chars.length >= 4 && d.chars.every((c) => c.y === 20));
   for (const c of d.chars) {
     const f = p(c.x, c.y, c.z), h = p(c.x, c.y + 1.9, c.z);
     assert.ok(f.x > 400 && f.x < 880 && h.y > 200 && f.y < 520 && f.y - h.y > 60, `${f.x | 0},${f.y | 0}`);

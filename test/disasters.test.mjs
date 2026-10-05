@@ -43,7 +43,7 @@ test('a flood drowns whoever stays low and spares the high places', () => {
   assert.ok(g && g[0] === 'drown' && g[1] > 8000 && g[1] < 12500, `ground ${g}`);
   const shop = stay(r, body(-20, 8.6, -8), 0, RUN_MS);
   assert.ok(shop && shop[0] === 'drown' && shop[1] > 22000 && shop[1] < 32000, `shop roof ${shop}`);
-  assert.equal(stay(r, body(0, 18, -15), 0, RUN_MS), null, 'the clock tower is above the flood');
+  assert.equal(stay(r, body(0, 20, -15), 0, RUN_MS), null, 'the clock tower is above the flood');
   assert.equal(stay(r, body(21, 15.4, 12), 0, RUN_MS), null, 'so is the hill');
   assert.equal(stay(r, body(24, 16.6, -20.5), 0, RUN_MS), null, 'and the water tower');
 });
@@ -56,7 +56,7 @@ test('breath lasts four seconds and comes back on dry land', () => {
   const wetAt = ((0.9 + 0.6) / 14.6) ** (1 / 1.5) * 30000;
   assert.ok(Math.abs(out[1] - (wetAt + 4000)) < 120, `${out[1]} vs ${wetAt + 4000}`);
   const hs2 = makeHazard();
-  stay(r, body(0, 18, -15), 20000, 30000, hs2);
+  stay(r, body(0, 20, -15), 20000, 30000, hs2);
   assert.equal(hs2.breath, 4);
 });
 
@@ -111,7 +111,7 @@ test('the tornado crosses the island at 6 m/s, pulls from 12 m and flings within
   }
   const at = tornadoAt(r, 20000);
   assert.equal(stay(r, body(at.x + 4, 0, at.z), 19990, 20010)?.[0], 'flung');
-  assert.equal(stay(r, body(at.x + 4, 18, at.z), 19990, 20010)?.[0], 'flung', 'buildings and towers do not stop it');
+  assert.equal(stay(r, body(at.x + 4, 20, at.z), 19990, 20010)?.[0], 'flung', 'buildings and towers do not stop it');
   const b = body(at.x + 9, 0, at.z);
   assert.equal(stay(r, b, 19990, 20010), null);
   assert.ok(Math.hypot(b.ex, b.ez) > 0.2, 'pulled toward it');

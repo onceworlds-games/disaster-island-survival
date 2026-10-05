@@ -227,25 +227,26 @@ export function buildMap() {
 
   // ---------------------------------------------------------------- clock tower: a shaft with a ladder on its south face
   {
-    const cx = 0, cz = -15, hw = 2.2;
-    box(cx - hw, 0, cz - hw, cx + hw, 18, cz + hw, 0xb06a45, 0xc9c0b0, 'clock');
-    dbox(cx - hw - 0.4, 16.2, cz - hw - 0.4, cx + hw + 0.4, 17.0, cz + hw + 0.4, 0xe6dccb); // cornice
-    dbox(cx - hw - 0.3, 17.0, cz - hw - 0.3, cx + hw + 0.3, 17.5, cz - hw + 0.1, 0xe6dccb); // parapet bits (visual)
-    dbox(cx - hw - 0.3, 17.0, cz + hw - 0.1, cx + hw + 0.3, 17.5, cz + hw + 0.3, 0xe6dccb);
-    dbox(cx - hw - 0.3, 17.0, cz - hw, cx - hw + 0.1, 17.5, cz + hw, 0xe6dccb);
-    dbox(cx + hw - 0.1, 17.0, cz - hw, cx + hw + 0.3, 17.5, cz + hw, 0xe6dccb);
+    const cx = 0, cz = -15, hw = 2.2, TOP = 20;
+    box(cx - hw, 0, cz - hw, cx + hw, TOP, cz + hw, 0xb06a45, 0xc9c0b0, 'clock');
+    dbox(cx - hw - 0.4, TOP - 1.8, cz - hw - 0.4, cx + hw + 0.4, TOP - 1.0, cz + hw + 0.4, 0xe6dccb); // cornice
+    dbox(cx - hw - 0.3, TOP - 1.0, cz - hw - 0.3, cx + hw + 0.3, TOP - 0.5, cz - hw + 0.1, 0xe6dccb); // parapet bits (visual)
+    dbox(cx - hw - 0.3, TOP - 1.0, cz + hw - 0.1, cx + hw + 0.3, TOP - 0.5, cz + hw + 0.3, 0xe6dccb);
+    dbox(cx - hw - 0.3, TOP - 1.0, cz - hw, cx - hw + 0.1, TOP - 0.5, cz + hw, 0xe6dccb);
+    dbox(cx + hw - 0.1, TOP - 1.0, cz - hw, cx + hw + 0.3, TOP - 0.5, cz + hw, 0xe6dccb);
     dbox(cx - hw - 0.1, 0, cz - hw - 0.1, cx + hw + 0.1, 0.8, cz + hw + 0.1, 0x7b5236);
     // clock faces on the four sides
     const face = (x, z, nx, nz) => {
-      const o = 0.06;
-      if (nx === 0) dbox(x - 1.3, 12.2, z + nz * o - 0.04, x + 1.3, 14.8, z + nz * o + 0.04, 0xf1ead8);
-      else dbox(x + nx * o - 0.04, 12.2, z - 1.3, x + nx * o + 0.04, 14.8, z + 1.3, 0xf1ead8);
+      const o = 0.06, y0 = TOP - 7.8, y1 = TOP - 5.2;
+      if (nx === 0) dbox(x - 1.3, y0, z + nz * o - 0.04, x + 1.3, y1, z + nz * o + 0.04, 0xf1ead8);
+      else dbox(x + nx * o - 0.04, y0, z - 1.3, x + nx * o + 0.04, y1, z + 1.3, 0xf1ead8);
+      const ym = (y0 + y1) / 2;
       if (nx === 0) {
-        dbox(x - 0.1, 13.5, z + nz * (o + 0.05) - 0.03, x + 0.1, 14.5, z + nz * (o + 0.05) + 0.03, 0x2a2a2a);
-        dbox(x - 0.1, 13.4, z + nz * (o + 0.05) - 0.03, x + 0.8, 13.6, z + nz * (o + 0.05) + 0.03, 0x2a2a2a);
+        dbox(x - 0.1, ym, z + nz * (o + 0.05) - 0.03, x + 0.1, ym + 1.0, z + nz * (o + 0.05) + 0.03, 0x2a2a2a);
+        dbox(x - 0.1, ym - 0.1, z + nz * (o + 0.05) - 0.03, x + 0.8, ym + 0.1, z + nz * (o + 0.05) + 0.03, 0x2a2a2a);
       } else {
-        dbox(x + nx * (o + 0.05) - 0.03, 13.5, z - 0.1, x + nx * (o + 0.05) + 0.03, 14.5, z + 0.1, 0x2a2a2a);
-        dbox(x + nx * (o + 0.05) - 0.03, 13.4, z - 0.1, x + nx * (o + 0.05) + 0.03, 13.6, z + 0.8, 0x2a2a2a);
+        dbox(x + nx * (o + 0.05) - 0.03, ym, z - 0.1, x + nx * (o + 0.05) + 0.03, ym + 1.0, z + 0.1, 0x2a2a2a);
+        dbox(x + nx * (o + 0.05) - 0.03, ym - 0.1, z - 0.1, x + nx * (o + 0.05) + 0.03, ym + 0.1, z + 0.8, 0x2a2a2a);
       }
     };
     face(cx, cz + hw, 0, 1);
@@ -253,15 +254,15 @@ export function buildMap() {
     face(cx + hw, cz, 1, 0);
     face(cx - hw, cz, -1, 0);
     // flag pole on the deck
-    deco.push({ t: 'cyl', x: cx + 1.6, z: cz - 1.6, y0: 18, y1: 21.5, r0: 0.07, r1: 0.05, seg: 5, c: 0xd9d9d9 });
-    dbox(cx + 1.6, 20.2, cz - 1.6 - 0.03, cx + 3.0, 21.4, cz - 1.6 + 0.03, 0xe0412f);
+    deco.push({ t: 'cyl', x: cx + 1.6, z: cz - 1.6, y0: TOP, y1: TOP + 3.5, r0: 0.07, r1: 0.05, seg: 5, c: 0xd9d9d9 });
+    dbox(cx + 1.6, TOP + 2.2, cz - 1.6 - 0.03, cx + 3.0, TOP + 3.4, cz - 1.6 + 0.03, 0xe0412f);
     // the ladder: rails and rungs on the south face
     const faceZ = cz + hw;
-    ladders.push({ id: 'clock', x: cx, z: faceZ, nx: 0, nz: 1, y0: 0, y1: 18, hw: 0.55 });
-    dbox(cx - 0.55, 0, faceZ, cx - 0.47, 18, faceZ + 0.1, COLORS.rail);
-    dbox(cx + 0.47, 0, faceZ, cx + 0.55, 18, faceZ + 0.1, COLORS.rail);
-    for (let y = 0.5; y < 18; y += 0.5) dbox(cx - 0.5, y, faceZ, cx + 0.5, y + 0.07, faceZ + 0.09, COLORS.rung);
-    buildings.push({ id: 'clock', kind: 'tower', x0: cx - hw, x1: cx + hw, z0: cz - hw, z1: cz + hw, top: 18, debris: true });
+    ladders.push({ id: 'clock', x: cx, z: faceZ, nx: 0, nz: 1, y0: 0, y1: TOP, hw: 0.55 });
+    dbox(cx - 0.55, 0, faceZ, cx - 0.47, TOP, faceZ + 0.1, COLORS.rail);
+    dbox(cx + 0.47, 0, faceZ, cx + 0.55, TOP, faceZ + 0.1, COLORS.rail);
+    for (let y = 0.5; y < TOP; y += 0.5) dbox(cx - 0.5, y, faceZ, cx + 0.5, y + 0.07, faceZ + 0.09, COLORS.rung);
+    buildings.push({ id: 'clock', kind: 'tower', x0: cx - hw, x1: cx + hw, z0: cz - hw, z1: cz + hw, top: TOP, debris: true });
     excl(cx - 4, cz - 4, cx + 4, cz + 5);
   }
 
@@ -417,7 +418,7 @@ export function buildMap() {
   }
   const highPoints = [
     { id: 'hill', x: 21, z: 12, y: 15.4 },
-    { id: 'clock', x: 0, z: -15, y: 18 },
+    { id: 'clock', x: 0, z: -15, y: 20 },
     { id: 'water', x: 24, z: -15.2, y: 16.6 },
   ];
 

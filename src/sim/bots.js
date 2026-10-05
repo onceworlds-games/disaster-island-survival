@@ -194,8 +194,8 @@ export class BotSim {
 
   highField(which) {
     const nav = this.nav;
-    if (which === 'clock') return field(nav, 'high-clock', (i) => nav.y[i] >= 17.5);
-    if (which === 'water') return field(nav, 'high-water', (i) => nav.y[i] >= 16 && nav.y[i] < 17.5 && nav.x[i] > 19);
+    if (which === 'clock') return field(nav, 'high-clock', (i) => nav.y[i] >= 19.5);
+    if (which === 'water') return field(nav, 'high-water', (i) => nav.y[i] >= 16 && nav.y[i] < 19 && nav.x[i] > 19);
     return field(nav, 'high-hill', (i) => nav.y[i] >= 15 && nav.y[i] < 16 && nav.x[i] > 15 && nav.x[i] < 30);
   }
 

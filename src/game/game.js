@@ -372,6 +372,15 @@ export class Game {
       }
       this.feedback(dt);
     }
+    // the host judged me while my connection was down: I'm out, whatever this page thought
+    const judged = this.g && this.g.rid === this.rid ? this.g.outs[this.me.id] : null;
+    if (judged && !this.out && this.slot >= 0 && matchLive) {
+      this.out = { cause: CAUSES[judged[1]] || 'meteor', at: judged[0], x: b.x, y: b.y, z: b.z, yaw: b.yaw };
+      this.audio.ko();
+      this.hud.callout('ELIMINATED', CAUSE_LABEL[this.out.cause] || '', 'bad', 1700);
+      this.followId = null;
+      this.applyControls();
+    }
     // the first few times a ladder is near, one word says what it is for
     let hint = null;
     if (!this.out && canMove && !b.climbing) {
