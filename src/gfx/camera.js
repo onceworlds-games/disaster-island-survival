@@ -47,7 +47,7 @@ export class CameraRig {
     let allowed = want;
     if (this.world && !orbitOnly) {
       const f = this.world.clearFraction(piv.x, piv.y, piv.z, piv.x + dx * want, piv.y + dy * want, piv.z + dz * want, 0.38);
-      allowed = Math.max(0.9, want * f);
+      allowed = Math.max(0.6, want * f);
     }
     // in at once, out gently
     const k = allowed < this.cur ? 1 - Math.exp(-dt * 24) : 1 - Math.exp(-dt * 2.4);
@@ -55,6 +55,17 @@ export class CameraRig {
     if (this.cur > allowed) this.cur = allowed; // never inside anything
     this.pos.set(piv.x + dx * this.cur, piv.y + dy * this.cur, piv.z + dz * this.cur);
     if (this.pos.y < 0.35) this.pos.y = 0.35;
+    // a last guard: if the camera would still sit inside a wall or a roof (the player pressed against one), walk it back toward the
+    // player along its line until it is in open air
+    if (this.world && !orbitOnly && this.world.solidAt(this.pos.x, this.pos.y, this.pos.z, 0.12)) {
+      let d = this.cur;
+      while (d > 0.05) {
+        d -= 0.1;
+        this.pos.set(piv.x + dx * d, Math.max(0.35, piv.y + dy * d), piv.z + dz * d);
+        if (!this.world.solidAt(this.pos.x, this.pos.y, this.pos.z, 0.12)) break;
+      }
+      this.cur = Math.max(0.05, d);
+    }
     // shake
     this.trauma = Math.max(0, this.trauma - dt * 1.3);
     const sh = this.trauma * this.trauma;

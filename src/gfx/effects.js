@@ -309,7 +309,7 @@ export class Effects {
   update(dt, t, cam, covered) {
     this.time += dt;
     const round = this.round;
-    const live = round && Number.isFinite(t);
+    const live = !!round && Number.isFinite(t);
     const prev = this.lastT;
     this.lastT = live ? t : -1e9;
     const gap = live && prev > -1e8 ? t - prev : 0;
@@ -561,7 +561,7 @@ export class Effects {
     const beamsOn = live && round.has.flood && t < 36000 && away > 0;
     const fade = beamsOn ? Math.min(1, (t + 5500) / 2500) * (t > 30000 ? Math.max(0, 1 - (t - 30000) / 6000) : 1) : 0;
     this.beacons.forEach((m, i) => {
-      m.visible = beamsOn && fade > 0.01;
+      m.visible = !!(beamsOn && fade > 0.01); // a real boolean: three draws anything whose visible is not exactly false
       if (m.visible) m.material.opacity = (0.14 + 0.1 * (0.5 + 0.5 * Math.sin(this.time * 3 + i * 1.7))) * fade;
     });
 

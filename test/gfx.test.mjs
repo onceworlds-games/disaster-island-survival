@@ -158,3 +158,37 @@ test('every sky mixes to valid colours and the calm sky is the start of every bl
   skyMix(['flood', 'meteor'], 0.5, out);
   assert.ok(out.top.every(Number.isFinite));
 });
+
+test('the camera is never inside geometry, even with the player pressed against a wall or under a roof (2000 random poses)', () => {
+  const cam = new THREE.PerspectiveCamera();
+  const rig = new CameraRig(cam, world);
+  let seed = 7;
+  const rnd = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  let tight = 0;
+  for (let n = 0; n < 2000; n++) {
+    // a spot a body can stand: random, then pressed against whatever is nearest by walking into it
+    const b = { x: (rnd() - 0.5) * 80, y: 0, z: (rnd() - 0.5) * 60 };
+    if (!world.map.inBounds(b.x, b.z) || world.blocked(b.x, b.z, 0)) continue;
+    rig.yaw = rnd() * Math.PI * 2;
+    rig.pitch = 0.05 + rnd() * 1.25;
+    rig.dist = 9;
+    rig.cur = 9;
+    for (let i = 0; i < 3; i++) rig.update(1 / 60, b, false);
+    const p = cam.position;
+    assert.ok(!world.solidAt(p.x, p.y, p.z, 0.1), `camera inside a solid at ${p.x.toFixed(1)},${p.y.toFixed(1)},${p.z.toFixed(1)} for a player at ${b.x.toFixed(1)},${b.z.toFixed(1)}`);
+    assert.ok(p.y >= 0.34);
+    if (rig.cur < 3) tight++;
+  }
+  assert.ok(tight > 20, 'some of the poses really were hemmed in');
+  // pressed flat against the shop's wall with the camera behind the wall
+  for (const yaw of [0, 1, 2, 3, 4, 5]) {
+    rig.yaw = yaw;
+    rig.pitch = 0.1;
+    rig.cur = 9;
+    for (let i = 0; i < 5; i++) rig.update(1 / 60, { x: -12.55, y: 0, z: -8 }, false);
+    assert.ok(!world.solidAt(cam.position.x, cam.position.y, cam.position.z, 0.1), `inside the wall at yaw ${yaw}`);
+  }
+});

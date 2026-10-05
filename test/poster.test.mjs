@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { world } from './helpers.mjs';
-import { stagePoster, POSTERS } from '../src/game/posterdata.js';
+import { stagePoster, POSTERS, nearOcclusion, projectPoint } from '../src/game/posterdata.js';
+import { tumblePose } from '../src/sim/tumble.js';
 import { prepareRound, tornadoAt, METEOR_TELEGRAPH } from '../src/sim/disasters.js';
 
 function view(d) {
@@ -50,9 +51,10 @@ test('cover: meteors in the air, an impact just now, players running and standin
     return f.x > 20 && f.x < 1260 && h.y > 200 && f.y < 715 && f.y - h.y > 25;
   });
   assert.ok(inFrame.length >= 8, `${inFrame.length} of ${d.chars.length} characters in frame`);
-  assert.ok(d.chars.some((c) => c.y > 8), 'one on a roof');
+  assert.ok(d.chars.filter((c) => c.y > 5).length >= 2, 'some on roofs');
   const clock = p(0, 20, -15);
   assert.ok(clock.x > 300 && clock.x < 980 && clock.y > 150 && clock.y < 500, 'the clock tower in the middle');
+  assert.ok(world.clearFraction(...d.camera.pos, 0, 12, -12.4, 0.25) >= 0.99, 'the clock tower is in plain sight');
   assert.ok(d.title && d.h === 720);
 });
 
@@ -98,4 +100,38 @@ test('icon: one tornado, centred, with room around it', () => {
   assert.ok(Math.abs(base.x - 256) < 60);
   assert.ok(top.y > 51 && base.y < 461, `tornado spans ${top.y | 0}..${base.y | 0}: nothing important in the outer tenth`);
   assert.equal(d.chars.length, 0);
+});
+
+test('no poster camera is inside or right behind anything, and every subject is in plain sight and in frame', () => {
+  for (const name of ['cover', 'action', 'win', 'icon']) {
+    const d = stagePoster(name, world);
+    const cam = d.camera;
+    assert.ok(!world.solidAt(cam.pos[0], cam.pos[1], cam.pos[2], 0.6), `${name}: the camera is inside a solid`);
+    assert.ok(nearOcclusion(world, cam, d.w, d.h, 8) <= 0.03, `${name}: a building fills the frame (${nearOcclusion(world, cam, d.w, d.h, 8).toFixed(2)})`);
+    for (const [i, c] of d.chars.entries()) {
+      let x = c.x, y = c.y, z = c.z;
+      if (c.out !== undefined) {
+        const t = tumblePose({}, c.out, c.cause, c.key);
+        x += t.dx;
+        y += t.dy;
+        z += t.dz;
+      }
+      const clear = world.clearFraction(cam.pos[0], cam.pos[1], cam.pos[2], x, y + 1.7, z, 0.25);
+      assert.ok(clear >= 0.99, `${name}: character ${i} is hidden behind something (${(clear * 100) | 0}% of the way)`);
+      const head = projectPoint(cam, d.w, d.h, x, y + 1.7, z), feet = projectPoint(cam, d.w, d.h, x, y, z);
+      assert.ok(head.depth > 3 && head.x > 40 && head.x < d.w - 40 && head.y > 20 && feet.y < d.h - 4, `${name}: character ${i} is out of frame (${head.x | 0},${head.y | 0}-${feet.y | 0})`);
+      assert.ok(feet.y - head.y >= 28, `${name}: character ${i} is only ${(feet.y - head.y) | 0} px tall`);
+    }
+  }
+});
+
+test('action: the camera looks at the tornado where it is at the staged moment, and the people are on open ground', () => {
+  const d = stagePoster('action', world);
+  const round = prepareRound(d.kinds, d.seed, world);
+  const tp = tornadoAt(round, d.t);
+  assert.ok(Math.hypot(tp.x - d.camera.target[0], tp.z - d.camera.target[2]) < 0.1, `tornado at ${tp.x},${tp.z}`);
+  for (const c of d.chars) assert.ok(!world.blocked(c.x, c.z, c.y), 'stands in the open');
+  const p = view(d);
+  const people = d.chars.filter((c) => c.out === undefined).map((c) => p(c.x, c.y + 1.7, c.z));
+  assert.ok(people.every((h) => h.y > 300), 'the people run in the lower half, readable at card size');
 });
