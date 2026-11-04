@@ -6,18 +6,6 @@ const { Hud, iconSvg, avatar } = await import('../src/ui/hud.js');
 
 const text = (el) => el.textContent;
 
-test('the title has one Play button that calls back, and a logo', () => {
-  let played = 0;
-  const hud = new Hud(body, { onPlay: () => played++ });
-  hud.showTitle(true);
-  assert.ok(!hud.title.classList.contains('hidden'));
-  assert.ok(text(hud.title).includes('DISASTER') && text(hud.title).includes('ISLAND') && text(hud.title).includes('SURVIVAL'));
-  hud.playBtn.click();
-  assert.equal(played, 1);
-  hud.showTitle(false);
-  assert.ok(hud.title.classList.contains('hidden'));
-});
-
 test('the lobby shows the setting, as buttons for the host and a plain value for the others', () => {
   const picked = [];
   const hud = new Hud(body, { onSetting: (v) => picked.push(v) });
@@ -35,7 +23,7 @@ test('the lobby shows the setting, as buttons for the host and a plain value for
   assert.ok(text(hud.tip).length < 30, 'a hint, not a paragraph');
 });
 
-test('the top bar, status, meters, banner, callouts, countdown, feed, panels and effects all work', () => {
+test('the top bar, status, meters, banner, callouts, feed, panels and effects all work', () => {
   const hud = new Hud(body, {});
   hud.setTop(true, { kinds: ['flood', 'tornado'], round: 2, rounds: 5, timer: 42, warn: false, frac: 0.8 });
   assert.ok(text(hud.kindName).includes('FLOOD') && text(hud.kindName).includes('TORNADO'));
@@ -58,11 +46,6 @@ test('the top bar, status, meters, banner, callouts, countdown, feed, panels and
   hud.callout('ELIMINATED', 'DROWNED', 'bad', 5);
   assert.ok(text(hud.center).includes('ELIMINATED'));
   hud.clearCallout();
-  hud.countdown(3);
-  hud.countdown(3);
-  hud.countdown('GO');
-  assert.ok(text(hud.center).includes('GO'));
-  hud.countdown(null);
   for (let i = 0; i < 7; i++) hud.feed(`P${i} OUT`, false);
   assert.ok(hud.feedBox.children.length <= 4);
   hud.survivors({ entries: [{ name: 'Nova', color: 0xe63946, url: null, me: true }, { name: 'Kai', color: 0x3a86ff, url: 'x.svg', me: false }], you: 'YOU SURVIVED  +1', good: true });

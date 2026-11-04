@@ -1,5 +1,5 @@
 // Drives the real Game (the client) end to end with a fake room, fake HUD, fake audio and a stage that has the real characters,
-// effects and camera but no renderer: a whole match from the title screen to the podium.
+// effects and camera but no renderer: a whole match from the lobby to the podium.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { world } from './helpers.mjs';
@@ -102,18 +102,12 @@ function startMatch(env) {
   void game;
 }
 
-test('the title screen: nothing is sent, controls are off, Play (or Enter) goes to the lobby with controls on', () => {
+test("the lobby at once: controls on, and the platform's strip is left alone", () => {
   const env = setup();
-  frames(env, 1);
-  assert.equal(env.game.mode, 'title');
-  assert.equal(env.room.me.presence, null, 'nobody is told about a player on the title screen');
-  assert.ok(env.hud.calls.some((c) => c[0] === 'showTitle' && c[1] === true));
-  env.input.onKey('Enter');
-  assert.equal(env.game.mode, 'play');
   frames(env, 0.5);
   assert.equal(env.controls.at(-1)?.stick, 'analog');
   assert.deepEqual(env.controls.at(-1).buttons.map((b) => b.id), ['jump', 'sprint']);
-  assert.equal(env.room.hidden.at(-1), false, 'the lobby strip is back');
+  assert.deepEqual(env.room.hidden, [], 'the game never hides the strip');
   const p = env.room.me.presence;
   assert.ok(p && Number.isFinite(p.x) && Number.isFinite(p.z) && p.o === 0);
   assert.ok(env.tagCalls.length >= 1, 'a name tag above me');
@@ -125,7 +119,6 @@ test('the title screen: nothing is sent, controls are off, Play (or Enter) goes 
 
 test('walking in the lobby moves the body and publishes it', () => {
   const env = setup(['me']);
-  env.input.onKey('Space');
   frames(env, 0.3);
   const x0 = env.game.body.x, z0 = env.game.body.z;
   env.keys.move.y = 1;
@@ -142,7 +135,6 @@ test('walking in the lobby moves the body and publishes it', () => {
 
 test('a whole match from the countdown to the podium: banner, siren, knockout, survivors, results, badges, stats', () => {
   const env = setup(['me', 'p2'], 3);
-  env.input.onKey('Enter');
   frames(env, 0.5);
   startMatch(env);
   const g0 = () => env.room.state.g;
@@ -152,7 +144,7 @@ test('a whole match from the countdown to the podium: banner, siren, knockout, s
   assert.equal(env.game.slot, 0);
   assert.ok(env.hud.calls.some((c) => c[0] === 'banner'), 'the announcement');
   assert.ok(env.audio.calls.some((c) => c[0] === 'siren'));
-  assert.ok(env.hud.calls.some((c) => c[0] === 'countdown'));
+  assert.ok(env.audio.calls.some((c) => c[0] === 'countdown'), "the beeps under the platform's numerals");
   // p2 is a remote human who just stands there; me stands still too and will be knocked out by whatever comes
   env.room.players.get('p2').presence = { x: 3, y: 0, z: 3, r: 0, s: 0, f: 0, q: g0().rid, o: 0, ot: 0 };
   const seen = new Set();
@@ -186,7 +178,6 @@ test('a whole match from the countdown to the podium: banner, siren, knockout, s
 
 test('a player who is not the host reports their own knockout to the host, and the report is repeated until it is heard', () => {
   const env = setup(['host', 'me'], 3, 'me');
-  env.input.onKey('Enter');
   frames(env, 0.3);
   const { room } = env;
   const ids = ['host', 'me'];
@@ -219,7 +210,6 @@ test('a player who is not the host reports their own knockout to the host, and t
 
 test('a late arrival watches: no body, no controls, the camera follows a survivor', () => {
   const env = setup(['host', 'late'], 3, 'late');
-  env.input.onKey('Enter');
   frames(env, 0.3);
   const { room } = env;
   room.match = { phase: 'playing', id: 'x2', participants: ['host'], seed: 9, startedAt: 0 };
@@ -244,7 +234,6 @@ test('a late arrival watches: no body, no controls, the camera follows a survivo
 
 test('rendering never throws across pauses, host changes, closing and re-entering the lobby', () => {
   const env = setup(['me', 'p2']);
-  env.input.onKey('Enter');
   frames(env, 0.3);
   startMatch(env);
   frames(env, 8);

@@ -1,4 +1,4 @@
-// The on-screen interface: a slim top bar, your status at the top right, big transient callouts in the middle, the title, the lobby
+// The on-screen interface: a slim top bar, your status at the top right, big transient callouts in the middle, the lobby
 // settings, survivors and the podium. Plain DOM; everything players can influence goes in with textContent, never innerHTML.
 
 import { INFO } from '../sim/disasters.js';
@@ -137,19 +137,6 @@ export class Hud {
     this.center = el('div', 'center');
     hud.appendChild(this.center);
 
-    // title
-    this.title = el('div', 'title hidden');
-    const logo = el('div', 'logo');
-    logo.append(el('span', 'l1', 'DISASTER'), el('span', 'l2', 'ISLAND'));
-    const l3 = el('span', 'l3', 'SURVIVAL');
-    logo.appendChild(l3);
-    this.playBtn = el('button', 'play');
-    this.playBtn.type = 'button';
-    this.playBtn.append(el('span', '', 'PLAY'), el('kbd', '', 'Enter'));
-    this.playBtn.addEventListener('click', () => this.h.onPlay && this.h.onPlay());
-    this.title.append(logo, this.playBtn);
-    screens.appendChild(this.title);
-
     // panels (survivors, podium)
     this.panelBox = el('div', 'center');
     this.panelBox.style.pointerEvents = 'none';
@@ -170,20 +157,7 @@ export class Hud {
     }
   }
 
-  // ------------------------------------------------------------------------------------------------------- title, lobby
-
-  showTitle(on) {
-    if (this.cache.title === on) return;
-    this.cache.title = on;
-    this.title.classList.toggle('hidden', !on);
-    if (on) {
-      try {
-        this.playBtn.focus({ preventScroll: true });
-      } catch {
-        // ignore
-      }
-    }
-  }
+  // ------------------------------------------------------------------------------------------------------- lobby
 
   /** The lobby's settings across the top. `host` gets buttons. */
   setLobby(show, opts) {
@@ -320,18 +294,6 @@ export class Hud {
   clearCallout() {
     if (this.calloutEl) this.calloutEl.remove();
     this.calloutEl = null;
-  }
-
-  /** The 3, 2, 1, GO: n is a number, 'GO', or null to clear. */
-  countdown(n) {
-    if (this.cache.cd === n) return;
-    this.cache.cd = n;
-    if (this.cdEl) this.cdEl.remove();
-    this.cdEl = null;
-    if (n === null || n === undefined) return;
-    const c = el('div', `cd outline ${n === 'GO' ? 'go' : ''}`, String(n));
-    this.center.appendChild(c);
-    this.cdEl = c;
   }
 
   feed(text, me) {

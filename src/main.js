@@ -14,7 +14,6 @@ async function boot() {
     lobby: 'bar',
     settings: [{ id: 'rounds', label: 'Disasters', options: [3, 5, 8], default: 5 }],
   });
-  room.hideLobby();
   ow.ui.setOrientation('landscape');
 
   // everything heavy comes after the join

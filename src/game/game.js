@@ -2,7 +2,6 @@
 // sound, and the match flow seen from this page. Rules and bots belong to the host's Director (src/net/director.js); this page
 // only decides what happens to its own player and tells the host.
 
-import * as THREE from 'three';
 import { stepBody, makeBody } from '../sim/collision.js';
 import { makeHazard, resetHazard, stepHazards } from '../sim/hazards.js';
 import {
@@ -16,8 +15,6 @@ import { SKIN } from '../gfx/characters.js';
 import { skyMix } from '../gfx/skies.js';
 import { TUMBLE_SECONDS } from '../sim/tumble.js';
 import { Director } from '../net/director.js';
-import { BotSim } from '../sim/bots.js';
-import { getNav } from '../sim/nav.js';
 
 const STEP = 1 / 60;
 const BOT_NAMES_FALLBACK = 'Bot';
@@ -40,9 +37,7 @@ export class Game {
     this.stats = stats || { matches: 0, wins: 0, survived: 0, rounds: 0 };
     this.me = room.me;
 
-    this.mode = 'title';
     this.director = null;
-    this.titleSim = null;
     this.acc = 0;
     this.lastMs = 0;
     this.time = 0;
@@ -64,7 +59,6 @@ export class Game {
     this.sendAcc = 0;
     this.sendTries = 0;
     this.freeze = 0;
-    this.camBlend = 1;
 
     // the round as this page sees it
     this.g = null;
@@ -93,8 +87,6 @@ export class Game {
     this.tmp = { x: 0, y: 0 };
     this.look = { x: 0, y: 0 };
     this.fwd = { x: 0, z: 0 };
-    this.camTarget = new THREE.Vector3();
-    this.titleTarget = new THREE.Vector3(0, 6, 0);
     this.perf = { sum: 0, n: 0, scale: 1, good: 0 };
     this.basePr = 1;
     this.lastHud = 0;
@@ -119,16 +111,10 @@ export class Game {
     room.on('matchstart', () => {
       this.director?.adopt();
       this.hud.hidePanel();
-      this.hud.countdown('GO');
-      setTimeout(() => this.hud.countdown(null), 700);
     });
     room.on('host', () => this.director?.adopt());
     room.on('reconnect', () => this.director?.adopt());
     room.on('matchend', () => this.onMatchEnd());
-    room.on('match', () => {
-      if (this.mode === 'title') room.hideLobby();
-      else room.hideLobby(false);
-    });
     room.on('message', (d, from) => this.director?.onMessage(d, from));
     room.on('state', (key, value) => {
       if (key === 'b' && value && typeof value.rid === 'string' && value.p && typeof value.p === 'object' && finite(value.t)) this.pushSnapshot(value);
@@ -143,13 +129,9 @@ export class Game {
     });
     addEventListener('resize', () => this.resize());
     this.input.onKey = (code, e) => this.onKey(code, e);
-    this.hud.h.onPlay = () => this.play();
     this.hud.h.onSetting = (v) => room.setSetting('rounds', v);
-    this.hud.title.addEventListener('click', () => this.play());
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.stage.tags.invalidate());
-    room.hideLobby();
     ow.ui.setOrientation('landscape');
-    ow.controls.set(null);
     // a host that joined is also the one who judges; a Director is cheap until it is needed
     this.director = new Director(room, this.world);
   }
@@ -173,27 +155,9 @@ export class Game {
     this.hud.callout(msg, '', 'bad', 60000);
   }
 
-  // ------------------------------------------------------------------------------------------------------- title and play
-
-  play() {
-    if (this.mode !== 'title') return;
-    this.audio.start();
-    this.audio.click();
-    this.mode = 'play';
-    this.hud.showTitle(false);
-    this.room.hideLobby(false);
-    this.camBlend = 0;
-    this.spawnLobby();
-    this.applyControls();
-    this.refresh();
-    if (this.g && this.slot >= 0) this.newRound(this.g);
-  }
+  // ------------------------------------------------------------------------------------------------------- keys and the lobby
 
   onKey(code) {
-    if (this.mode === 'title') {
-      if (code === 'Enter' || code === 'Space') this.play();
-      return;
-    }
     if (this.out || this.slot < 0 || this.room.spectating) {
       if (code === 'KeyQ') this.cycleFollow(-1);
       if (code === 'KeyE') this.cycleFollow(1);
@@ -279,16 +243,14 @@ export class Game {
       this.stage.rig.dist = 9;
     }
     this.followId = null;
-    if (this.mode === 'play') {
-      this.applyControls();
-      if (this.round && this.tRun < -300) {
-        this.hud.clearCallout();
-        this.hud.hidePanel();
-        this.hud.banner(this.round.kinds);
-        this.audio.siren(Math.min(6, -this.tRun / 1000));
-        this.audio.whoosh(0.5);
-        this.hud.flash();
-      }
+    this.applyControls();
+    if (this.round && this.tRun < -300) {
+      this.hud.clearCallout();
+      this.hud.hidePanel();
+      this.hud.banner(this.round.kinds);
+      this.audio.siren(Math.min(6, -this.tRun / 1000));
+      this.audio.whoosh(0.5);
+      this.hud.flash();
     }
   }
 
@@ -329,12 +291,7 @@ export class Game {
     this.time += dt;
     const room = this.room;
     this.refresh();
-    // the host's duties don't wait for a tap on Play (the host role can land on a page still showing the title)
     this.director.tick(dt);
-    if (this.mode === 'title') {
-      this.stepTitle(dt);
-      return;
-    }
     this.prev.x = this.body.x;
     this.prev.y = this.body.y;
     this.prev.z = this.body.z;
@@ -405,19 +362,6 @@ export class Game {
       }
     }
     this.publish(dt);
-  }
-
-  stepTitle(dt) {
-    if (!this.titleSim) {
-      try {
-        this.titleSim = new BotSim(this.world, getNav(this.world));
-        this.titleSim.setRound(null, [0, 3, 6, 9, 12, 15].map((slot, i) => ({ id: `t${i}`, slot })));
-      } catch (e) {
-        this.titleSim = null;
-        if (this.errors++ < 3) setTimeout(() => { throw e; });
-      }
-    }
-    if (this.titleSim) this.titleSim.step(dt, 0);
   }
 
   /** Footsteps, jumps, landings, splashes: what my own body does answers with sound and motion. */
@@ -613,10 +557,6 @@ export class Game {
     this.refresh();
     stage.update(dt);
     this.input.takeLook(this.look);
-    if (this.mode === 'title') {
-      this.input.takeTap();
-      return this.renderTitle(dt, ms);
-    }
     const g = this.g, phase = this.phase;
     const b = this.body;
     // where my body is drawn: between the last two steps
@@ -639,13 +579,6 @@ export class Game {
       else target = { x: 0, y: 3, z: 0 };
     } else this.input.takeTap();
     rig.update(dt, target, false);
-    if (this.camBlend < 1) {
-      this.camBlend = Math.min(1, this.camBlend + dt / 1.3);
-      const e = this.camBlend * this.camBlend * (3 - 2 * this.camBlend);
-      const a = this.titlePose(this.time);
-      stage.camera.position.lerp(this.camTarget.set(a.x, a.y, a.z), 1 - e);
-      stage.camera.lookAt(lerp(this.titleTarget.x, rig.pivot.x, e), lerp(this.titleTarget.y, rig.pivot.y, e), lerp(this.titleTarget.z, rig.pivot.z, e));
-    }
     stage.follow(target.x, target.y, target.z);
     if (this.round && this.round.has.quake && !this.reduced && (phase === 'run' || phase === 'warn') && this.tRun > -500) rig.trauma = Math.max(rig.trauma, 0.2 * clamp((this.tRun + 500) / 1500, 0, 1));
 
@@ -661,39 +594,6 @@ export class Game {
     this.perfGovernor(dt);
   }
 
-  titlePose(t) {
-    const a = t * 0.07;
-    return { x: Math.cos(a) * 56, y: 25 + Math.sin(t * 0.13) * 3, z: Math.sin(a) * 44 };
-  }
-
-  renderTitle(dt) {
-    const stage = this.stage;
-    const p = this.titlePose(this.time);
-    stage.camera.position.set(p.x, p.y, p.z);
-    stage.camera.lookAt(this.titleTarget);
-    stage.follow(0, 0, 0);
-    stage.chars.begin();
-    stage.tags.begin();
-    if (this.titleSim) {
-      for (const bot of this.titleSim.bots) this.pushBody(bot.id, bot.body, null, { name: '', tag: false, color: PLAYER_COLORS[(hashStr(bot.id) >> 3) % PLAYER_COLORS.length] }, dt);
-    }
-    stage.chars.end();
-    stage.tags.end();
-    stage.fx.update(dt, NaN, stage.camera.position, false);
-    this.skyK += (0 - this.skyK) * Math.min(1, dt * 3);
-    stage.applySky(skyMix([], 0, this.mixObj));
-    stage.setWater(SEA, 0.6);
-    stage.setUnderwater(false);
-    stage.render();
-    this.hud.showTitle(true);
-    this.hud.setTop(false, {});
-    this.hud.setLobby(false);
-    this.hud.hideStat();
-    this.hud.countdown(null);
-    this.audio.setLevel(0);
-    this.audio.weather(0, 0, 0, 0.5);
-  }
-
   /** Draws everyone: me, the other players from presence, the bots. Fills lastPoses for the spectating camera. */
   collect(dt, px, py, pz) {
     const stage = this.stage, room = this.room, g = this.g, tags = stage.tags, chars = stage.chars;
@@ -703,7 +603,7 @@ export class Game {
     const inMatch = !!g && this.phase !== 'lobby' && this.phase !== 'starting';
     const tRun = this.tRun;
     // me
-    const drawMe = this.mode === 'play' && (!inMatch || this.slot >= 0) && !room.spectating;
+    const drawMe = (!inMatch || this.slot >= 0) && !room.spectating;
     if (drawMe) {
       const b = this.body;
       const out = this.out ? (tRun - this.out.at) / 1000 : -1;
@@ -756,7 +656,7 @@ export class Game {
     tags.end();
   }
 
-  /** Converts a simulation body (host bots, title bots) into a drawn character. */
+  /** Converts a simulation body (host bots) into a drawn character. */
   pushBody(id, body, out, opt, dt) {
     let s = this.botSmooth.get(id);
     if (!s) {
@@ -805,7 +705,7 @@ export class Game {
     const p = this.room.players.get(id);
     stage.tags.add({
       x: d.x, y: d.y + 2.3, z: d.z, name: d.name !== undefined ? d.name : this.nameOf(id), color, img: this.avatarFor(id).img,
-      ready: !!(p && p.ready) && (this.phase === 'lobby' || this.phase === 'starting'), me: !!d.me, dist,
+      me: !!d.me, dist,
     });
   }
 
@@ -846,29 +746,21 @@ export class Game {
   updateHud(dt, ms, covered) {
     const hud = this.hud, g = this.g, room = this.room, phase = this.phase, now = room.matchNow();
     const b = this.body;
-    // countdown from the room's start time
+    // the beeps under the platform's 3-2-1 (it draws the numerals)
     const m = room.match;
     if (m.phase === 'starting' && finite(m.startsAt)) {
-      const left = m.startsAt - this.ow.now();
-      const n = Math.ceil(left / 1000);
-      if (n >= 1 && n <= 3) {
-        if (this.cdLast !== n) {
-          this.cdLast = n;
-          hud.countdown(n);
-          this.audio.countdown(n);
-        }
+      const n = Math.ceil((m.startsAt - this.ow.now()) / 1000);
+      if (n >= 1 && n <= 3 && this.cdLast !== n) {
+        this.cdLast = n;
+        this.audio.countdown(n);
       } else if (n < 1 && this.cdLast !== 0) {
         this.cdLast = 0;
-        hud.countdown('GO');
         this.audio.countdown(0);
       }
-    } else if (m.phase !== 'playing' && this.cdLast !== null) {
-      this.cdLast = null;
-      hud.countdown(null);
-    }
+    } else if (m.phase !== 'playing') this.cdLast = null;
 
     const inLobby = phase === 'lobby' || phase === 'starting';
-    hud.setLobby(inLobby && this.mode === 'play', { value: Number(room.settings.rounds) || 5, host: room.isHost && phase === 'lobby', options: [3, 5, 8] });
+    hud.setLobby(inLobby, { value: Number(room.settings.rounds) || 5, host: room.isHost && phase === 'lobby', options: [3, 5, 8] });
     const spectating = room.spectating || (this.slot < 0 && !!g && !inLobby);
     hud.setWatcher(room.spectating);
     if (!g || inLobby || phase === 'wait') {
@@ -1027,10 +919,7 @@ export class Game {
     this.bsnaps = [];
     this.followId = null;
     this.slot = -1;
-    if (this.mode === 'play') {
-      this.spawnLobby();
-      this.room.hideLobby(false);
-    }
+    this.spawnLobby();
     this.hud.clearBanner(true);
     this.hud.clearCallout();
     this.audio.stopSiren();
@@ -1044,7 +933,7 @@ export class Game {
   applyControls() {
     const phase = this.phase;
     const inLobby = phase === 'lobby' || phase === 'starting';
-    const want = this.mode === 'play' && !this.out && !this.closed && (inLobby || ((phase === 'warn' || phase === 'run' || phase === 'result') && this.slot >= 0));
+    const want = !this.out && !this.closed && (inLobby || ((phase === 'warn' || phase === 'run' || phase === 'result') && this.slot >= 0));
     if (this.controlsOn === want) return;
     this.controlsOn = want;
     try {

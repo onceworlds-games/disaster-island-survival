@@ -49,26 +49,13 @@ export function drawTag(ctx, t) {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   let name = t.name || '';
-  const maxW = W - 120 - (t.ready ? 44 : 0);
+  const maxW = W - 120;
   while (name.length > 1 && ctx.measureText(name).width > maxW) name = name.slice(0, -1);
   if (name !== t.name) name = name.slice(0, -1) + '.';
   ctx.shadowColor = 'rgba(0,0,0,0.6)';
   ctx.shadowBlur = 4;
   ctx.fillText(name, cx + 38, cy + 3);
   ctx.shadowBlur = 0;
-  if (t.ready) {
-    ctx.fillStyle = '#35e08a';
-    ctx.beginPath();
-    ctx.arc(W - 40, cy, 17, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#06210f';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(W - 48, cy);
-    ctx.lineTo(W - 41, cy + 7);
-    ctx.lineTo(W - 30, cy - 7);
-    ctx.stroke();
-  }
 }
 
 export class TagPool {
@@ -100,11 +87,11 @@ export class TagPool {
     this.n = 0;
   }
 
-  /** t: { x, y, z, name, color, img, ready, me, dist } (y is the top of the head). */
+  /** t: { x, y, z, name, color, img, me, dist } (y is the top of the head). */
   add(t) {
     if (this.n >= this.sprites.length) return;
     const slot = this.sprites[this.n++];
-    const key = `${t.name}|${t.color}|${t.ready ? 1 : 0}|${t.me ? 1 : 0}|${t.img && t.img.complete ? 1 : 0}|${this.redraw}`;
+    const key = `${t.name}|${t.color}|${t.me ? 1 : 0}|${t.img && t.img.complete ? 1 : 0}|${this.redraw}`;
     if (slot.key !== key && slot.ctx) {
       slot.key = key;
       drawTag(slot.ctx, t);

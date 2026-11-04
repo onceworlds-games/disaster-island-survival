@@ -95,10 +95,10 @@ test('the sea shader hooks compile-time replacements into the standard shader', 
   assert.ok(shader.uniforms.uTime && shader.uniforms.uAmp);
 });
 
-test('name tags draw with a name, a ready tick, a missing avatar and a long name', () => {
+test('name tags draw with a name, a missing avatar and a long name', () => {
   const ctx = fakeCtx();
-  drawTag(ctx, { name: 'Nova', color: 0xe63946, ready: true, me: true, img: null });
-  drawTag(ctx, { name: 'A very long player name that must not overflow the tag', color: 0x3a86ff, ready: false, me: false, img: { complete: true, naturalWidth: 10 } });
+  drawTag(ctx, { name: 'Nova', color: 0xe63946, me: true, img: null });
+  drawTag(ctx, { name: 'A very long player name that must not overflow the tag', color: 0x3a86ff, me: false, img: { complete: true, naturalWidth: 10 } });
   drawTag(ctx, { name: '', color: 0x3a86ff });
   assert.ok(ctx.calls.some((c) => c[0] === 'fillText'));
   const made = [];
@@ -107,8 +107,8 @@ test('name tags draw with a name, a ready tick, a missing avatar and a long name
     return { width: w, height: h, getContext: () => fakeCtx() };
   });
   pool.begin();
-  pool.add({ x: 0, y: 2, z: 0, name: 'Kai', color: 0xff9f1c, ready: false, me: false, dist: 12, img: null });
-  pool.add({ x: 1, y: 2, z: 0, name: 'Kai', color: 0xff9f1c, ready: true, me: true, dist: 90, img: null });
+  pool.add({ x: 0, y: 2, z: 0, name: 'Kai', color: 0xff9f1c, me: false, dist: 12, img: null });
+  pool.add({ x: 1, y: 2, z: 0, name: 'Kai', color: 0xff9f1c, me: true, dist: 90, img: null });
   pool.end();
   assert.equal(pool.sprites.filter((x) => x.sprite.visible).length, 2);
   pool.invalidate();

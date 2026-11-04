@@ -73,7 +73,7 @@ test('an Audio object has no property that hides one of its own methods', () => 
 });
 
 test('the SDK calls the game makes are all in the guide', () => {
-  const sdk = new Set(['on', 'me', 'spectating', 'matchNow', 'isHost', 'hideLobby', 'match', 'state', 'running', 'players', 'setState', 'settings', 'setPresence', 'setSetting', 'send', 'presenceAt', 'host', 'endMatch', 'setOpen']);
+  const sdk = new Set(['on', 'me', 'spectating', 'matchNow', 'isHost', 'match', 'state', 'running', 'players', 'setState', 'settings', 'setPresence', 'setSetting', 'send', 'presenceAt', 'host', 'endMatch', 'setOpen']);
   for (const [f, text] of files) {
     for (const n of calls(text, /\broom\.([A-Za-z]+)/g)) assert.ok(sdk.has(n), `${f}: room.${n} is not in the SDK reference`);
   }

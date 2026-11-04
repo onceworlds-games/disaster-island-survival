@@ -26,7 +26,6 @@ export function fakes(room) {
     h: {},
     cache: {},
     bannerEl: null,
-    title: { addEventListener() {} },
     calls,
     banner(kinds) {
       calls.push(['banner', kinds]);
@@ -39,7 +38,6 @@ export function fakes(room) {
     survivors: rec('survivors'),
     podium: rec('podium'),
     callout: rec('callout'),
-    countdown: rec('countdown'),
     feed: rec('feed'),
     flash: rec('flash'),
     hidePanel: rec('hidePanel'),
@@ -49,7 +47,6 @@ export function fakes(room) {
     setLobby: rec('setLobby'),
     hideStat: rec('hideStat'),
     watching: rec('watching'),
-    showTitle: rec('showTitle'),
     setReduced: rec('setReduced'),
     underwater: rec('underwater'),
     vignette: rec('vignette'),
